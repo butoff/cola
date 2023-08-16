@@ -1,0 +1,25 @@
+#!/bin/bash
+
+if [[ $# -gt 1 ]] || [[ $# -eq 1 ]] && [[ ! -f $1 ]]
+then
+    echo "Usage: cola [FILE]"
+    echo "If FILE not specified, standard input is used"
+    echo
+    echo "cola (COLorized Android) prints its input, highlighting specific values:"
+    echo "numbers, permissions, actions, categories and components. That makes"
+    echo "Android dumps and logs more readable."
+    exit
+fi
+
+input=${1--}
+
+cat $input |
+sed -E 's/([[:space:]]|[\(\[{,=])((-)?[0-9]+(\.[0-9]+)?)([[:space:]]|[\)%,}]|\]|$)/\1\o033[34m\2\o033[0m\5/g' |       # numbers
+sed -E 's/(0x[0-9a-f]+)/\o033[36m\1\o033[0m/g' |                                                                    # hexes
+sed -E 's/([^A-Za-z0-9_])(null)([^A-Za-z0-9_]|$)/\1\o033[36m\2\o033[0m\3/g' |                                         # nulls
+sed -E 's/(true|false)/\o033[34m\1\o033[0m/g' |                                                                     # bools
+sed -E 's/(([_a-z]+\.)+permission\.[_A-Z]+)/\o033[32m\1\o033[0m/g' |                                                # permissions
+sed -E 's/(([_a-z]+\.)+action\.[_A-Z]+)/\o033[31m\1\o033[0m/g' |                                                    # actions
+sed -E 's/(([_a-z]+\.)+category\.[_A-Z]+)/\o033[33m\1\o033[0m/g' |                                                  # categories
+sed -E 's/(([_a-z]+\.)+([a-z_]+)\/([_a-z]+)?(\.[_a-z]+)*\.([_a-z]+\.)*[A-Z][_a-zA-Z$]+)/\o033[35m\1\o033[0m/g' |    # components
+less -R
